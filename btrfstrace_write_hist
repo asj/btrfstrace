@@ -1,10 +1,9 @@
 #!/usr/bin/bpftrace
 
 /*
- Show write performance distribution per block size.
-*/
+ btrfstrace_write_hist:
+	Show write performance distribution per block size.
 
-/*
  Example:
 
 $ ./bpftrace_timespent_btrfs_write

@@ -1,11 +1,10 @@
 #!/usr/bin/env bpftrace
 
 /*
-  Show sync performance distribution and write performance distribution
-  per block size.
-*/
+ btrfstrace_write_sync_hist:
+   Show sync performance distribution and write performance distribution
+   per block size.
 
-/*
  Example:
 
 $ ./btrfstrace_write_sync_hist

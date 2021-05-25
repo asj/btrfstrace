@@ -1,7 +1,15 @@
 #!/bin/bash
 
-# A wrapper script for ftrace graph functionality, making it easy and quick to use.
-# Runs a given command and writes the function graphs trace into /tmp/ftracegraph.out
+# ftracegraph:
+#  A wrapper script for ftrace graph functionality, making it easy and quick to use.
+#  Runs a given command and writes the function graphs trace into /tmp/ftracegraph.out
+#
+#  Usage:
+#     ftracegraph <function-to-graph> <depth> <filter|noop> <cmd-to-run>"
+#
+#  Examples:
+#     ftracegraph btrfs_file_write_iter 2 noop "fs_mark -d /btrfs -D 2 -N 1 -L 1 -S 1 -s 65536"'
+#     ftracegraph btrfs_buffered_write 2 "*:mod:btrfs" "fs_mark -d /btrfs -D 2 -N 1 -L 1 -S 1 -s 65536"'
 
 useas()
 {
