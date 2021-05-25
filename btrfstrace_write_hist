@@ -1,0 +1,41 @@
+#!/usr/bin/bpftrace
+
+/*
+ Show write performance distribution per block size.
+*/
+
+/*
+ Example:
+
+$ ./bpftrace_timespent_btrfs_write
+Attaching 2 probes...
+^C
+
+@file_write_in_usecs[16384]: 
+[64, 128)          11731 |@@@@@@@@@@@@@@@@                                    |
+[128, 256)         36371 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@|
+[256, 512)          5352 |@@@@@@@                                             |
+[512, 1K)           9439 |@@@@@@@@@@@@@                                       |
+[1K, 2K)            1986 |@@                                                  |
+[2K, 4K)             399 |                                                    |
+[4K, 8K)             174 |                                                    |
+[8K, 16K)             61 |                                                    |
+[16K, 32K)            15 |                                                    |
+[32K, 64K)             8 |                                                    |
+
+*/
+
+
+#include <linux/fs.h>
+
+kprobe:btrfs_file_write_iter
+{
+	@write_start[tid] = nsecs;
+}
+
+kretprobe:btrfs_file_write_iter
+/ @write_start[tid] /
+{
+	@file_write_in_usecs[retval] = hist((nsecs - @write_start[tid]) / 1000);
+	delete(@write_start[tid]);
+}

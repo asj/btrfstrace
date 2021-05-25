@@ -1,0 +1,56 @@
+#!/usr/bin/env bpftrace
+
+/*
+  Show sync performance distribution and write performance distribution
+  per block size.
+*/
+
+/*
+ Example:
+
+$ ./btrfstrace_write_sync_hist
+Attaching 4 probes...
+^C
+
+@file_write_in_usecs[16384]: 
+[64, 128)           2498 |@@@@@@@@@@@@@@                                      |
+[128, 256)          9081 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@|
+[256, 512)          1084 |@@@@@@                                              |
+[512, 1K)           3034 |@@@@@@@@@@@@@@@@@                                   |
+[1K, 2K)             463 |@@                                                  |
+[2K, 4K)              84 |                                                    |
+[4K, 8K)              59 |                                                    |
+[8K, 16K)             19 |                                                    |
+[16K, 32K)             5 |                                                    |
+[32K, 64K)             1 |                                                    |
+[64K, 128K)            1 |                                                    |
+
+@sync_file_in_usecs: 
+[512K, 1M)             1 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@|
+
+*/
+
+
+kprobe:btrfs_file_write_iter
+{
+	@write_start[tid] = nsecs;
+}
+
+kretprobe:btrfs_file_write_iter
+/ @write_start[tid] /
+{
+	@file_write_in_usecs[retval] = hist((nsecs - @write_start[tid]) / 1000);
+	delete(@write_start[tid]);
+}
+
+kprobe:btrfs_sync_file
+{
+	@sync_start[tid] = nsecs;
+}
+
+kretprobe:btrfs_sync_file
+/ @sync_start[tid] /
+{
+	@sync_file_in_usecs = hist((nsecs - @sync_start[tid]) / 1000);
+	delete(@sync_start[tid]);
+}

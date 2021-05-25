@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# A wrapper script for ftrace graph functionality, making it easy and quick to use.
+# Runs a given command and writes the function graphs trace into /tmp/ftracegraph.out
+
+useas()
+{
+	echo Usage:
+	echo "  ftracegraph <function-to-graph> <depth> <filter|noop> <cmd-to-run>"
+	echo "Examples:"
+	echo '  ftracegraph btrfs_file_write_iter 2 noop "fs_mark -d /btrfs -D 2 -N 1 -L 1 -S 1 -s 65536"'
+	echo '  ftracegraph btrfs_buffered_write 2 "*:mod:btrfs" "fs_mark -d /btrfs -D 2 -N 1 -L 1 -S 1 -s 65536"'
+}
+
+trap useas EXIT
+
+: ${1?"arg1 <function-to-trace missing"} && func=$1
+: ${2?"arg2 <depth>"} && depth=$2
+: ${3?"arg3 <filter>"} && filter=$3
+: ${4?"arg4 <cmd-to-run missing"} && cmd=$4
+
+trap - EXIT
+
+dir=/sys/kernel/debug/tracing
+trace-cmd reset
+
+sysctl kernel.ftrace_enabled=1
+
+echo function_graph > ${dir}/current_tracer
+echo $depth > ${dir}/max_graph_depth
+echo > ${dir}/set_ftrace_filter
+if [ $filter != "noop" ]
+then
+	for i in ${filter}
+	do
+		echo $i >> ${dir}/set_ftrace_filter
+	done
+fi
+echo 1 > ${dir}/tracing_on
+
+echo "${func}" > ${dir}/set_graph_function
+
+$cmd
+
+echo 0 > ${dir}/tracing_on
+
+cat ${dir}/trace > /tmp/ftracegraph.out
+trace-cmd reset
+echo "Wrote trace to /tmp/ftracegraph.out"
