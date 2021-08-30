@@ -48,7 +48,7 @@ echo 1 > ${dir}/tracing_on
 
 echo "${func}" > ${dir}/set_graph_function
 
-$cmd
+echo $cmd | bash
 
 echo 0 > ${dir}/tracing_on
 
